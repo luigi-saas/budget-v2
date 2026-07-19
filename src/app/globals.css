@@ -114,3 +114,69 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-slideUp { animation: slideUp 0.5s ease-out both; }
+.slide-up { animation: slideUp 0.5s ease-out both; }
+
+/* ── Form Elements ── */
+.field {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border-radius: var(--r-field);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border-2);
+  color: var(--t1);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+.field::placeholder {
+  color: var(--t3);
+}
+
+/* ── Glass Card ── */
+.glass {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-radius: var(--r-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+.glass-2 {
+  background: var(--surface-2);
+  border-radius: var(--r-field);
+}
+
+/* ── Banners ── */
+.banner {
+  padding: 10px 14px;
+  font-size: 13px;
+  border-radius: var(--r-field);
+  font-weight: 500;
+}
+.banner-error {
+  background: var(--bad-tint);
+  color: var(--bad);
+}
+.banner-success {
+  background: var(--good-tint);
+  color: var(--good);
+}
+
+/* ── Tap feedback ── */
+.tap {
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+}
+.tap:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* ── Display Font ── */
+.f-display {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

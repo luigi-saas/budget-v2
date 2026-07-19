@@ -2,277 +2,439 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { EnvelopeSimple, LockSimple, User, ArrowRight, Eye, EyeSlash } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setInfo("");
-    setLoading(true);
-
+  async function handleGoogle() {
     try {
-      if (mode === "login") {
-        const { error: err } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (err) {
-          setError(err.message);
-          return;
-        }
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        const { data, error: err } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { display_name: name || "User" } },
-        });
-        if (err) {
-          setError(err.message);
-          return;
-        }
-        if (data.session) {
-          // Email confirmation disabled — auto-signed in
-          router.push("/dashboard");
-          router.refresh();
-        } else {
-          // Email confirmation required
-          setInfo("Check your email for a confirmation link, then sign in.");
-          setMode("login");
-        }
+      setLoading(true);
+      setError("");
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (err) throw err;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Google sign-in failed";
+      setError(msg);
+      setLoading(false);
+    }
+  }
+
+  async function handleEmail() {
+    try {
+      setLoading(true);
+      setError("");
+      setNotice("");
+
+      if (!email || !password || (mode === "signup" && !name)) {
+        setError("Please fill in all fields.");
+        setLoading(false);
+        return;
       }
-    } catch {
-      setError("Network error. Please try again.");
+
+      if (mode === "signup") {
+        const { error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: name, full_name: name },
+          },
+        });
+        if (err) throw err;
+        setNotice("Check your email for a confirmation link!");
+        setLoading(false);
+        return;
+      }
+
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (err) throw err;
+      router.replace("/dashboard");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Authentication failed";
+      setError(msg.replace("AuthApiError: ", ""));
+      setLoading(false);
+    }
+  }
+
+  async function handleReset() {
+    try {
+      setLoading(true);
+      setError("");
+      setNotice("");
+
+      if (!email) {
+        setError("Enter your email first.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      if (err) throw err;
+      setNotice("Password reset email sent — check your inbox.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Password reset failed";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="flex items-center justify-center px-4 py-16 sm:py-24">
-      <div className="w-full max-w-md animate-fadeIn">
-        {/* Heading */}
-        <div className="text-center mb-8">
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "var(--t1)" }}
+  // Check if Supabase is properly configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const isConfigured = supabaseUrl && !supabaseUrl.includes("placeholder");
+
+  if (!isConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div
+          className="glass"
+          style={{ maxWidth: 380, padding: 24, textAlign: "center" }}
+        >
+          <p
+            className="f-display"
+            style={{
+              fontWeight: 700,
+              fontSize: 17,
+              color: "var(--t1)",
+              marginBottom: 8,
+            }}
           >
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            Supabase isn&rsquo;t configured
+          </p>
+          <p style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.5 }}>
+            Add your Supabase project credentials to{" "}
+            <code
+              style={{
+                background: "var(--surface-2)",
+                padding: "1px 5px",
+                borderRadius: 4,
+              }}
+            >
+              .env.local
+            </code>{" "}
+            and restart the app to enable sign-in.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
+      <div className="w-full max-w-sm relative slide-up">
+        {/* Wordmark */}
+        <div className="text-center mb-10">
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+            style={{ background: "var(--accent)", boxShadow: "var(--shadow-btn)" }}
+          >
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+            </svg>
+          </div>
+          <h1
+            className="f-display"
+            style={{ fontSize: 32, fontWeight: 700, color: "var(--t1)" }}
+          >
+            Flousy
           </h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--t3)" }}>
+          <p style={{ color: "var(--t2)", fontSize: 14, marginTop: 6 }}>
             {mode === "login"
-              ? "Sign in to manage your budget"
-              : "Start tracking your finances today"}
+              ? "Welcome back. Track smarter."
+              : mode === "signup"
+              ? "Start your financial clarity journey."
+              : "Reset your password."}
           </p>
         </div>
 
-        {/* Form card */}
-        <div
-          className="p-8"
-          style={{
-            background: "var(--surface)",
-            borderRadius: "var(--r-card)",
-            boxShadow: "var(--shadow-card)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
-              <FieldGroup label="Full Name" icon={<User className="w-4 h-4" />}>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm outline-none"
-                  style={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border-2)",
-                    borderRadius: "var(--r-field)",
-                    color: "var(--t1)",
-                  }}
-                  placeholder="John Doe"
-                />
-              </FieldGroup>
-            )}
-
-            <FieldGroup label="Email" icon={<Mail className="w-4 h-4" />}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-2.5 text-sm outline-none"
+        {/* Card */}
+        <div className="glass p-6 space-y-4">
+          {mode !== "reset" && (
+            <>
+              <button
+                onClick={handleGoogle}
+                disabled={loading}
+                className="btn-ghost w-full tap"
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  padding: "12px 16px",
+                  borderRadius: "var(--r-field)",
+                  border: "1.5px solid var(--border-2)",
                   background: "var(--surface-2)",
-                  border: "1px solid var(--border-2)",
-                  borderRadius: "var(--r-field)",
+                  fontWeight: 600,
+                  fontSize: 14,
                   color: "var(--t1)",
+                  cursor: "pointer",
                 }}
-                placeholder="you@example.com"
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                  <path
+                    fill="#EA4335"
+                    d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.8 6C12.3 13 17.7 9.5 24 9.5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M10.4 28.7A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.8-6z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.3 0-11.6-4.2-13.5-10l-7.8 6C6.6 42.6 14.6 48 24 48z"
+                  />
+                </svg>
+                Continue with Google
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div style={{ flex: 1, height: 1, background: "var(--border-2)" }} />
+                <span style={{ fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>
+                  OR
+                </span>
+                <div style={{ flex: 1, height: 1, background: "var(--border-2)" }} />
+              </div>
+            </>
+          )}
+
+          {mode === "signup" && (
+            <div className="relative">
+              <User
+                size={16}
+                color="var(--t3)"
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
               />
-            </FieldGroup>
+              <input
+                className="field"
+                style={{ paddingLeft: 40 }}
+                placeholder="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          )}
 
-            <FieldGroup label="Password" icon={<Lock className="w-4 h-4" />}>
-              <div className="relative">
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-10 py-2.5 text-sm outline-none"
-                  style={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border-2)",
-                    borderRadius: "var(--r-field)",
-                    color: "var(--t1)",
-                  }}
-                  placeholder="••••••••"
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "var(--t3)" }}
-                >
-                  {showPass ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </FieldGroup>
-
-            {error && (
-              <div
-                className="text-sm px-4 py-2.5"
-                style={{
-                  background: "var(--bad-tint)",
-                  color: "var(--bad)",
-                  borderRadius: "var(--r-field)",
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            {info && (
-              <div
-                className="text-sm px-4 py-2.5"
-                style={{
-                  background: "var(--good-tint)",
-                  color: "var(--good)",
-                  borderRadius: "var(--r-field)",
-                }}
-              >
-                {info}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+          <div className="relative">
+            <EnvelopeSimple
+              size={16}
+              color="var(--t3)"
               style={{
-                background: "var(--accent)",
-                color: "var(--accent-ink)",
-                borderRadius: "var(--r-field)",
-                boxShadow: "var(--shadow-btn)",
+                position: "absolute",
+                left: 14,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            />
+            <input
+              className="field"
+              style={{ paddingLeft: 40 }}
+              placeholder="Email address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && mode === "reset" && handleReset()}
+            />
+          </div>
+
+          {mode !== "reset" && (
+            <div className="relative">
+              <LockSimple
+                size={16}
+                color="var(--t3)"
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
+              />
+              <input
+                className="field"
+                style={{ paddingLeft: 40, paddingRight: 40 }}
+                placeholder="Password"
+                type={showPass ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleEmail()}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                {showPass ? (
+                  <EyeSlash size={16} color="var(--t3)" />
+                ) : (
+                  <Eye size={16} color="var(--t3)" />
+                )}
+              </button>
+            </div>
+          )}
+
+          {mode === "login" && (
+            <button
+              onClick={() => {
+                setMode("reset");
+                setError("");
+                setNotice("");
+              }}
+              style={{
+                fontSize: 12,
+                color: "var(--t3)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textAlign: "right",
+                display: "block",
+                marginLeft: "auto",
               }}
             >
-              {loading ? (
-                <div
-                  className="w-5 h-5 rounded-full border-2 animate-spin"
-                  style={{
-                    borderColor: "var(--accent-ink)",
-                    borderTopColor: "transparent",
-                  }}
-                />
-              ) : (
-                <>
-                  {mode === "login" ? "Sign In" : "Create Account"}
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              Forgot password?
             </button>
-          </form>
+          )}
 
-          <div className="mt-6 text-center text-sm" style={{ color: "var(--t3)" }}>
-            {mode === "login" ? (
-              <>
-                Don&apos;t have an account?{" "}
-                <button
-                  onClick={() => {
-                    setMode("signup");
-                    setError("");
-                    setInfo("");
-                  }}
-                  className="font-semibold hover:underline"
-                  style={{ color: "var(--accent-dim)" }}
-                >
-                  Sign up
-                </button>
-              </>
+          {error && <p className="banner banner-error">{error}</p>}
+          {notice && <p className="banner banner-success">{notice}</p>}
+
+          <button
+            onClick={mode === "reset" ? handleReset : handleEmail}
+            disabled={loading}
+            className="btn-primary tap"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "12px 16px",
+              borderRadius: "var(--r-field)",
+              background: "var(--accent)",
+              color: "var(--accent-ink)",
+              fontWeight: 700,
+              fontSize: 14,
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            {loading ? (
+              <span
+                className="w-5 h-5 border-2 rounded-full animate-spin"
+                style={{
+                  borderColor: "rgba(0,0,0,0.25)",
+                  borderTopColor: "var(--accent-ink)",
+                }}
+              />
             ) : (
               <>
-                Already have an account?{" "}
+                <ArrowRight size={16} weight="bold" />
+                {mode === "login"
+                  ? "Sign in"
+                  : mode === "signup"
+                  ? "Create account"
+                  : "Send reset link"}
+              </>
+            )}
+          </button>
+
+          <p style={{ textAlign: "center", fontSize: 13, color: "var(--t3)" }}>
+            {mode === "reset" ? (
+              <button
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setNotice("");
+                }}
+                style={{
+                  color: "var(--t1)",
+                  fontWeight: 700,
+                  textDecoration: "underline",
+                  textDecorationColor: "var(--accent-dim)",
+                  textUnderlineOffset: "3px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Back to sign in
+              </button>
+            ) : (
+              <>
+                {mode === "login"
+                  ? "Don't have an account? "
+                  : "Already have an account? "}
                 <button
                   onClick={() => {
-                    setMode("login");
+                    setMode(mode === "login" ? "signup" : "login");
                     setError("");
-                    setInfo("");
                   }}
-                  className="font-semibold hover:underline"
-                  style={{ color: "var(--accent-dim)" }}
+                  style={{
+                    color: "var(--t1)",
+                    fontWeight: 700,
+                    textDecoration: "underline",
+                    textDecorationColor: "var(--accent-dim)",
+                    textUnderlineOffset: "3px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
-                  Sign in
+                  {mode === "login" ? "Sign up free" : "Sign in"}
                 </button>
               </>
             )}
-          </div>
+          </p>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function FieldGroup({
-  label,
-  icon,
-  children,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--t2)" }}>
-        {label}
-      </label>
-      <div className="relative">
-        <span
-          className="absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "var(--t3)" }}
-        >
-          {icon}
-        </span>
-        {children}
+        <div className="flex items-center justify-center gap-4 mt-6">
+          {["Encrypted", "Cloud sync", "Installable"].map((b) => (
+            <span
+              key={b}
+              style={{ fontSize: 11, color: "var(--t3)", fontWeight: 600 }}
+            >
+              {b}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
