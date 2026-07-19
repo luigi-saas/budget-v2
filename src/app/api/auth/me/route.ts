@@ -48,6 +48,7 @@ export async function GET() {
     .values({
       id: authUser.id,
       email: authUser.email!,
+      passwordHash: "",
       displayName,
     })
     .returning({
