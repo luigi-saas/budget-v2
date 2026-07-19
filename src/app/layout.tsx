@@ -4,7 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Flousy — Personal Budget Tracker",
-  description: "Track variable expenses, fixed monthly charges, and saving goals with per-category budgets and month-over-month history.",
+  description:
+    "Track variable expenses, fixed monthly charges, and saving goals with per-category budgets and month-over-month history.",
   icons: { icon: "/favicon.svg" },
 };
 

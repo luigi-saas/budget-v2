@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { savingGoals } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getSession } from "@/lib/auth";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export async function GET() {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const goals = await db.select().from(savingGoals)
@@ -14,7 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = await req.json();
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = await req.json();
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const id = req.nextUrl.searchParams.get("id");

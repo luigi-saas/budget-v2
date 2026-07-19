@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { monthBudgets, variableExpenses, fixedExpenses } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { getSession } from "@/lib/auth";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export async function GET() {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const months = await db.select().from(monthBudgets)

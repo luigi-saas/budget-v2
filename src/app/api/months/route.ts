@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { monthBudgets, variableExpenses, fixedExpenses } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { getSession } from "@/lib/auth";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const monthId = req.nextUrl.searchParams.get("monthId");
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getAuthUser();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = await req.json();
