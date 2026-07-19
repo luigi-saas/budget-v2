@@ -1,45 +1,43 @@
-// ── Category types ──────────────────────────────────────────────────────────
+// ── Category types ────────────────────────────────────────────────────────────
 export const VARIABLE_TYPES = [
-  "Groceries", "Transport", "Restaurants", "Entertainment", "Beauty",
-  "Family", "Shopping", "Health", "Education", "Other",
+  "Groceries", "Transport", "Restaurants", "Entertainment",
+  "Beauty", "Family", "Shopping", "Health", "Education", "Other",
 ] as const;
 
 export const FIXED_TYPES = [
-  "Rent", "Utilities", "Internet", "Phone", "Insurance",
-  "Subscriptions", "Other",
+  "Rent", "Utilities", "Internet", "Phone", "Insurance", "Subscriptions", "Other",
 ] as const;
 
 export type ExpenseType = string;
 export type FixedType = string;
 
-// ── Money places ────────────────────────────────────────────────────────────
+// ── Money places ──────────────────────────────────────────────────────────────
 export type MoneyPlace = "bank" | "home" | "wallet";
 export const MONEY_PLACES: MoneyPlace[] = ["bank", "home", "wallet"];
 export const MONEY_PLACE_LABEL: Record<MoneyPlace, string> = {
   bank: "Bank", home: "Home", wallet: "Wallet",
 };
 
-// ── Category Colors ─────────────────────────────────────────────────────────
+// ── Category Colors ───────────────────────────────────────────────────────────
 export const CAT_COLOR: Record<string, string> = {
   Groceries: "#D6A75C", Transport: "#7B9E8E", Restaurants: "#C9695A",
   Entertainment: "#B9925A", Beauty: "#C98A8F", Family: "#8FA37E",
-  Shopping: "#C9695A", Health: "#5FA97A", Education: "#7B9E8E",
-  Other: "#8A8175", Rent: "#D6A75C", Utilities: "#7B9E8E",
-  Internet: "#5FA97A", Phone: "#B9925A", Insurance: "#C98A8F",
-  Subscriptions: "#8A8175",
+  Shopping: "#C9695A", Health: "#5FA97A", Education: "#7B9E8E", Other: "#8A8175",
+  Rent: "#D6A75C", Utilities: "#7B9E8E", Internet: "#5FA97A",
+  Phone: "#B9925A", Insurance: "#C98A8F", Subscriptions: "#8A8175",
 };
 
-// ── Currencies ──────────────────────────────────────────────────────────────
+// ── Currencies ────────────────────────────────────────────────────────────────
 export const CURRENCIES = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "USD", symbol: "$",   name: "US Dollar" },
+  { code: "EUR", symbol: "€",   name: "Euro" },
+  { code: "GBP", symbol: "£",   name: "British Pound" },
   { code: "MAD", symbol: "MAD", name: "Moroccan Dirham" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
-  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+  { code: "CAD", symbol: "C$",  name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$",  name: "Australian Dollar" },
+  { code: "JPY", symbol: "¥",   name: "Japanese Yen" },
+  { code: "INR", symbol: "₹",   name: "Indian Rupee" },
+  { code: "BRL", symbol: "R$",  name: "Brazilian Real" },
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
 ];
 
@@ -49,42 +47,20 @@ export function formatCurrency(amount: number, currency: string = "USD"): string
   return `${sym}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// ── Onboarding Strategies ───────────────────────────────────────────────────
+// ── Onboarding Strategies ─────────────────────────────────────────────────────
 export interface ManagementStrategy {
   id: string; name: string; tagline: string; description: string;
   homeShare: number; bankShare: number; recommended?: boolean;
 }
 
 export const MANAGEMENT_STRATEGIES: ManagementStrategy[] = [
-  {
-    id: "50-30-20", name: "50/30/20 Rule", recommended: true,
-    tagline: "Recommended — balanced & beginner-friendly",
-    description: "50% needs, 30% wants, 20% savings.",
-    homeShare: 0.3, bankShare: 0.2,
-  },
-  {
-    id: "zero-based", name: "Zero-Based Budgeting",
-    tagline: "Best for tight control",
-    description: "Give every dollar a job so nothing is unaccounted.",
-    homeShare: 0.35, bankShare: 0.1,
-  },
-  {
-    id: "envelope", name: "Envelope System",
-    tagline: "Best for cash spenders",
-    description: "Keep separate cash envelopes per category.",
-    homeShare: 0.55, bankShare: 0.05,
-  },
-  {
-    id: "pay-yourself-first", name: "Pay Yourself First",
-    tagline: "Best for saving goals",
-    description: "Set money aside the moment you're paid.",
-    homeShare: 0.25, bankShare: 0.3,
-  },
+  { id: "50-30-20", name: "50/30/20 Rule", recommended: true, tagline: "Recommended — balanced & beginner-friendly", description: "50% needs, 30% wants, 20% savings.", homeShare: 0.3, bankShare: 0.2 },
+  { id: "zero-based", name: "Zero-Based Budgeting", tagline: "Best for tight control", description: "Give every dollar a job so nothing is unaccounted.", homeShare: 0.35, bankShare: 0.1 },
+  { id: "envelope", name: "Envelope System", tagline: "Best for cash spenders", description: "Keep separate cash envelopes per category.", homeShare: 0.55, bankShare: 0.05 },
+  { id: "pay-yourself-first", name: "Pay Yourself First", tagline: "Best for saving goals", description: "Set money aside the moment you're paid.", homeShare: 0.25, bankShare: 0.3 },
 ];
 
-export interface CategorySuggestion {
-  type: string; hint: string; sharePct: number; recommended: boolean;
-}
+export interface CategorySuggestion { type: string; hint: string; sharePct: number; recommended: boolean; }
 
 export const SUGGESTED_VARIABLE_CATEGORIES: CategorySuggestion[] = [
   { type: "Groceries", hint: "Groceries & everyday food", sharePct: 12, recommended: true },
@@ -109,7 +85,7 @@ export const SUGGESTED_FIXED_CATEGORIES: CategorySuggestion[] = [
   { type: "Other", hint: "Other recurring bills", sharePct: 2, recommended: false },
 ];
 
-// ── Month helpers ───────────────────────────────────────────────────────────
+// ── Month helpers ─────────────────────────────────────────────────────────────
 export function currentMonthId(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -117,9 +93,7 @@ export function currentMonthId(): string {
 
 export function monthLabel(id: string): string {
   const [y, m] = id.split("-");
-  return new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString("en-US", {
-    month: "long", year: "numeric",
-  });
+  return new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
 }
 
 export function prevMonthId(id: string): string {

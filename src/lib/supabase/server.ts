@@ -24,7 +24,6 @@ export async function createClient() {
             );
           } catch {
             // Can be ignored when called from a Server Component.
-            // Middleware handles session refresh.
           }
         },
       },

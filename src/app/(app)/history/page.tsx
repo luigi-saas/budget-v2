@@ -6,7 +6,10 @@ import { useUser } from "@/components/AppShell";
 import { FileText, Search, Filter, ArrowUpDown } from "lucide-react";
 import { formatCurrency, CAT_COLOR } from "@/lib/constants";
 
-interface Transaction { id: string; name: string; amount: number; type: string; date: string; kind: "variable" | "fixed"; monthId: string }
+interface Transaction {
+  id: string; name: string; amount: number; type: string;
+  date: string; kind: "variable" | "fixed"; monthId: string;
+}
 
 export default function HistoryPage() {
   const { user } = useUser();
@@ -58,7 +61,9 @@ export default function HistoryPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-[3px] animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} /></div>
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 rounded-full border-[3px] animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
+        </div>
       ) : (
         <div className="space-y-4 animate-fadeIn">
           {/* Filters */}
@@ -129,7 +134,7 @@ export default function HistoryPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>{formatCurrency(t.amount, currency)}</p>
-                    <p className="text-xs" style={{ color: "var(--t3)" }}>{t.date}</p>
+                    {t.date && <p className="text-xs mt-0.5" style={{ color: "var(--t3)" }}>{t.date}</p>}
                   </div>
                 </div>
               ))}

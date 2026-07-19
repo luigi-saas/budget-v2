@@ -3,511 +3,304 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/components/AppShell";
-import { ArrowRight, ArrowLeft, Check, Sparkle, Wallet, Bank, House, CreditCard } from "@phosphor-icons/react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import {
-  SUGGESTED_VARIABLE_CATEGORIES,
-  SUGGESTED_FIXED_CATEGORIES,
-  MANAGEMENT_STRATEGIES,
-  currentMonthId,
-  formatCurrency,
-  CAT_COLOR,
+  formatCurrency, MANAGEMENT_STRATEGIES, ManagementStrategy,
+  SUGGESTED_VARIABLE_CATEGORIES, SUGGESTED_FIXED_CATEGORIES,
+  currentMonthId, monthLabel, CAT_COLOR,
 } from "@/lib/constants";
 import { CAT_ICON, CAT_ICON_FALLBACK } from "@/lib/category-icons";
 
-const STEPS = ["Income", "Expense categories", "Fixed bills", "Strategy", "Review"] as const;
-
-function buildMonthFromOnboarding(
-  monthId: string,
-  opts: {
-    income: number;
-    variableCategories: string[];
-    fixedCategories: string[];
-    strategyId: string;
-  }
-) {
-  const strategy = MANAGEMENT_STRATEGIES.find((s) => s.id === opts.strategyId) ?? MANAGEMENT_STRATEGIES[0];
-  const homePart = Math.round(opts.income * strategy.homeShare);
-  const bankPart = Math.round(opts.income * strategy.bankShare);
-  const walletPart = Math.max(0, opts.income - homePart - bankPart);
-
-  const variableCategoryBases: Record<string, number> = {};
-  const fixedCategoryBases: Record<string, number> = {};
-
-  // Distribute wallet part among variable categories
-  const varSuggestions = SUGGESTED_VARIABLE_CATEGORIES.filter((c) =>
-    opts.variableCategories.includes(c.type)
-  );
-  const totalVarPct = varSuggestions.reduce((sum, c) => sum + c.sharePct, 0);
-  varSuggestions.forEach((c) => {
-    variableCategoryBases[c.type] = Math.round((c.sharePct / totalVarPct) * walletPart);
-  });
-
-  // Distribute bank/home part among fixed categories
-  const fixedTotal = homePart + bankPart * 0.5;
-  const fixSuggestions = SUGGESTED_FIXED_CATEGORIES.filter((c) =>
-    opts.fixedCategories.includes(c.type)
-  );
-  const totalFixPct = fixSuggestions.reduce((sum, c) => sum + c.sharePct, 0);
-  fixSuggestions.forEach((c) => {
-    fixedCategoryBases[c.type] = Math.round((c.sharePct / totalFixPct) * fixedTotal);
-  });
-
-  return {
-    monthId,
-    label: new Date().toLocaleString("default", { month: "long", year: "numeric" }),
-    totalBudget: opts.income,
-    homePart,
-    walletPart,
-    bankPart,
-    variableCategoryBases,
-    fixedCategoryBases,
-    activeVariableCategories: opts.variableCategories,
-    activeFixedCategories: opts.fixedCategories,
-    categoryColors: {} as Record<string, string>,
-    categoryIcons: {} as Record<string, string>,
-  };
-}
+const STEPS = ["Welcome", "Income", "Variable Categories", "Fixed Bills", "Strategy", "Summary"];
 
 export default function OnboardingPage() {
-  const { user, loading: authLoading, refetchUser } = useUser();
+  const { user, refetchUser } = useUser();
   const router = useRouter();
-
   const [step, setStep] = useState(0);
   const [income, setIncome] = useState("");
+  const [currency] = useState(user?.currency ?? "USD");
   const [variableCats, setVariableCats] = useState<string[]>(
-    SUGGESTED_VARIABLE_CATEGORIES.filter((c) => c.recommended).map((c) => c.type)
+    SUGGESTED_VARIABLE_CATEGORIES.filter(c => c.recommended).map(c => c.type)
   );
   const [fixedCats, setFixedCats] = useState<string[]>(
-    SUGGESTED_FIXED_CATEGORIES.filter((c) => c.recommended).map((c) => c.type)
+    SUGGESTED_FIXED_CATEGORIES.filter(c => c.recommended).map(c => c.type)
   );
-  const [strategyId, setStrategyId] = useState(
-    MANAGEMENT_STRATEGIES.find((s) => s.recommended)?.id ?? MANAGEMENT_STRATEGIES[0].id
-  );
-  const [saving, setSaving] = useState(false);
+  const [strategyId, setStrategyId] = useState("50-30-20");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace("/login");
-    }
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
-    if (user?.onboardingComplete) {
-      router.replace("/dashboard");
-    }
+    if (user?.onboardingComplete) router.push("/dashboard");
   }, [user, router]);
 
   const incomeNum = parseFloat(income) || 0;
-  const currency = user?.currency ?? "USD";
+  const strategy = MANAGEMENT_STRATEGIES.find(s => s.id === strategyId) ?? MANAGEMENT_STRATEGIES[0];
+  const walletShare = 1 - strategy.homeShare - strategy.bankShare;
+  const bankPart = incomeNum * strategy.bankShare;
+  const homePart = incomeNum * strategy.homeShare;
+  const walletPart = incomeNum * walletShare;
 
-  function toggle<T>(list: T[], setList: (v: T[]) => void, val: T) {
-    setList(list.includes(val) ? list.filter((v) => v !== val) : [...list, val]);
-  }
+  const toggleVar = (type: string) => {
+    setVariableCats(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
+  const toggleFixed = (type: string) => {
+    setFixedCats(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
 
-  async function finish() {
-    if (!user) return;
-    setSaving(true);
+  const handleNext = () => {
+    if (step === 1 && !income) { setError("Please enter your monthly income"); return; }
+    setError("");
+    if (step < STEPS.length - 1) setStep(s => s + 1);
+  };
+
+  const handleFinish = async () => {
+    setSubmitting(true);
     setError("");
     try {
       const monthId = currentMonthId();
-      const month = buildMonthFromOnboarding(monthId, {
-        income: incomeNum,
-        variableCategories: variableCats,
-        fixedCategories: fixedCats,
-        strategyId,
+      // Create this month's budget
+      await fetch("/api/months", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          monthId, label: monthLabel(monthId), totalBudget: incomeNum,
+          homePart, walletPart, bankPart,
+          variableCategoryBases: Object.fromEntries(
+            SUGGESTED_VARIABLE_CATEGORIES
+              .filter(c => variableCats.includes(c.type))
+              .map(c => [c.type, (incomeNum * c.sharePct) / 100])
+          ),
+          fixedCategoryBases: Object.fromEntries(
+            SUGGESTED_FIXED_CATEGORIES
+              .filter(c => fixedCats.includes(c.type))
+              .map(c => [c.type, (incomeNum * c.sharePct) / 100])
+          ),
+          activeVariableCategories: variableCats,
+          activeFixedCategories: fixedCats,
+          categoryColors: {}, categoryIcons: {},
+        }),
       });
-
-      // Create the initial month budget
-      const res = await fetch("/api/months", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(month),
-      });
-      if (!res.ok) throw new Error("Failed to save month");
-
       // Mark onboarding complete
       await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingComplete: true }),
       });
-
       await refetchUser();
-      router.replace("/dashboard");
-    } catch (e) {
-      console.error(e);
-      setError("Couldn't save your setup. Check your connection and try again.");
-      setSaving(false);
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again.");
     }
-  }
+    setSubmitting(false);
+  };
 
-  const canNext =
-    step === 0
-      ? incomeNum > 0
-      : step === 1
-      ? variableCats.length > 0
-      : step === 2
-      ? true
-      : step === 3
-      ? !!strategyId
-      : true;
-
-  const strategy = MANAGEMENT_STRATEGIES.find((s) => s.id === strategyId) ?? MANAGEMENT_STRATEGIES[0];
-  const homePart = Math.round(incomeNum * strategy.homeShare);
-  const bankPart = Math.round(incomeNum * strategy.bankShare);
-  const walletPart = Math.max(0, incomeNum - homePart - bankPart);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
-        <div
-          className="w-10 h-10 rounded-full border-[3px] animate-spin"
-          style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
-        />
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10" style={{ background: "var(--bg)" }}>
-      <div className="w-full max-w-md relative slide-up">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-            style={{ background: "var(--accent)", boxShadow: "var(--shadow-btn)" }}
-          >
-            <Wallet size={28} weight="bold" color="var(--accent-ink)" />
-          </div>
-          <h1 className="f-display" style={{ fontSize: 26, fontWeight: 700, color: "var(--t1)" }}>
-            Set up your budget
-          </h1>
-          <p style={{ color: "var(--t2)", fontSize: 13, marginTop: 6 }}>
-            Step {step + 1} of {STEPS.length} — {STEPS[step]}
-          </p>
-          {/* Progress bar */}
-          <div className="flex gap-1.5 mt-4 justify-center">
-            {STEPS.map((_, i) => (
-              <div
-                key={i}
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
+      <div className="w-full max-w-lg">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-9 h-9 flex items-center justify-center font-bold text-sm"
+            style={{ background: "var(--accent)", borderRadius: "12px", color: "var(--accent-ink)" }}>F</div>
+          <span className="text-xl font-bold" style={{ color: "var(--t1)" }}>Flousy</span>
+        </div>
+
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {STEPS.map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
                 style={{
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  background: i <= step ? "var(--accent)" : "var(--border-2)",
-                  transition: "background 0.2s",
-                }}
-              />
-            ))}
-          </div>
+                  background: i < step ? "var(--good)" : i === step ? "var(--accent)" : "var(--surface-2)",
+                  color: i <= step ? "var(--accent-ink)" : "var(--t3)",
+                }}>
+                {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
+              </div>
+              {i < STEPS.length - 1 && <div className="w-6 h-0.5" style={{ background: i < step ? "var(--good)" : "var(--border-2)" }} />}
+            </div>
+          ))}
         </div>
 
         {/* Card */}
-        <div className="glass p-6 space-y-4">
+        <div className="p-8 animate-slideUp" style={{ background: "var(--surface)", borderRadius: "var(--r-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}>
+          <h2 className="text-xl font-bold mb-1" style={{ color: "var(--t1)" }}>{STEPS[step]}</h2>
+
+          {/* Welcome */}
           {step === 0 && (
-            <div className="space-y-3">
-              <p style={{ fontSize: 13, color: "var(--t2)" }}>
-                What's your monthly income? We'll use it to suggest budgets for each category.
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed" style={{ color: "var(--t2)" }}>
+                Welcome to Flousy! Let&apos;s set up your first budget in a few quick steps. We&apos;ll help you track expenses, set saving goals, and understand your spending patterns.
               </p>
-              <input
-                className="field"
-                style={{ fontSize: 18, fontWeight: 700 }}
-                placeholder="e.g. 5000"
-                inputMode="decimal"
-                type="number"
-                min={0}
-                value={income}
-                onChange={(e) => setIncome(e.target.value)}
-                autoFocus
-              />
-              <p style={{ fontSize: 11, color: "var(--t3)" }}>
-                Amount in {currency}, before any deductions.
-              </p>
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                {[
+                  { label: "Variable Expenses", desc: "Track day-to-day spending" },
+                  { label: "Fixed Bills", desc: "Monthly recurring charges" },
+                  { label: "Saving Goals", desc: "Save towards targets" },
+                  { label: "Reports", desc: "Insights & analytics" },
+                ].map(f => (
+                  <div key={f.label} className="p-3" style={{ background: "var(--surface-2)", borderRadius: "var(--r-field)" }}>
+                    <p className="text-xs font-semibold" style={{ color: "var(--t1)" }}>{f.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--t3)" }}>{f.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
+          {/* Income */}
           {step === 1 && (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              <p style={{ fontSize: 13, color: "var(--t2)", marginBottom: 4 }}>
-                Pick the categories you spend on day to day. We've preselected the ones most people need.
+            <div className="space-y-4">
+              <p className="text-sm" style={{ color: "var(--t2)" }}>
+                What&apos;s your monthly income? We&apos;ll use it to suggest budgets for each category.
               </p>
-              {SUGGESTED_VARIABLE_CATEGORIES.map((c) => {
-                const Icon = CAT_ICON[c.type] ?? CAT_ICON_FALLBACK;
-                const active = variableCats.includes(c.type);
-                const color = CAT_COLOR[c.type] ?? "#8A8175";
-                return (
-                  <button
-                    key={c.type}
-                    onClick={() => toggle(variableCats, setVariableCats, c.type)}
-                    className="tap w-full"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "11px 14px",
-                      borderRadius: "var(--r-field)",
-                      border: `1.5px solid ${active ? "var(--accent)" : "var(--border-2)"}`,
-                      background: active ? "var(--accent-tint)" : "var(--surface-2)",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: active ? color : "var(--surface-3)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Icon size={18} weight="bold" color={active ? "#fff" : "var(--t2)"} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)" }}>
-                        {c.type}
-                        {c.recommended && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-dim)", marginLeft: 6 }}>
-                            · suggested
-                          </span>
-                        )}
-                      </p>
-                      <p style={{ fontSize: 11, color: "var(--t3)" }}>{c.hint}</p>
-                    </div>
-                    {active && <Check size={16} weight="bold" color="var(--accent)" />}
-                  </button>
-                );
-              })}
+              <input type="number" value={income} onChange={e => setIncome(e.target.value)} autoFocus
+                className="w-full px-4 py-3 text-lg font-semibold outline-none transition"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: "var(--r-field)", color: "var(--t1)" }}
+                placeholder="3000" />
+              <p className="text-xs" style={{ color: "var(--t3)" }}>Amount in {currency}, before any deductions.</p>
             </div>
           )}
 
+          {/* Variable Categories */}
           {step === 2 && (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              <p style={{ fontSize: 13, color: "var(--t2)", marginBottom: 4 }}>
-                Which recurring bills do you pay each month?
-              </p>
-              {SUGGESTED_FIXED_CATEGORIES.map((c) => {
-                const Icon = CAT_ICON[c.type] ?? CAT_ICON_FALLBACK;
-                const active = fixedCats.includes(c.type);
-                const color = CAT_COLOR[c.type] ?? "#8A8175";
-                return (
-                  <button
-                    key={c.type}
-                    onClick={() => toggle(fixedCats, setFixedCats, c.type)}
-                    className="tap w-full"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "11px 14px",
-                      borderRadius: "var(--r-field)",
-                      border: `1.5px solid ${active ? "var(--accent)" : "var(--border-2)"}`,
-                      background: active ? "var(--accent-tint)" : "var(--surface-2)",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
+            <div className="space-y-4">
+              <p className="text-sm" style={{ color: "var(--t2)" }}>Pick the categories you spend on day to day.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {SUGGESTED_VARIABLE_CATEGORIES.map(c => {
+                  const Icon = CAT_ICON[c.type] ?? CAT_ICON_FALLBACK;
+                  const active = variableCats.includes(c.type);
+                  const color = CAT_COLOR[c.type] ?? "#8A8175";
+                  return (
+                    <button key={c.type} onClick={() => toggleVar(c.type)}
+                      className="flex items-center gap-2 p-3 text-left transition"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: active ? color : "var(--surface-3)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Icon size={18} weight="bold" color={active ? "#fff" : "var(--t2)"} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)" }}>
-                        {c.type}
-                        {c.recommended && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-dim)", marginLeft: 6 }}>
-                            · suggested
-                          </span>
-                        )}
-                      </p>
-                      <p style={{ fontSize: 11, color: "var(--t3)" }}>{c.hint}</p>
-                    </div>
-                    {active && <Check size={16} weight="bold" color="var(--accent)" />}
-                  </button>
-                );
-              })}
+                        background: active ? "var(--accent-tint)" : "var(--surface-2)",
+                        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                        borderRadius: "var(--r-field)",
+                      }}>
+                      <Icon size={16} style={{ color: active ? color : "var(--t3)" }} weight="duotone" />
+                      <div>
+                        <p className="text-xs font-medium" style={{ color: active ? "var(--t1)" : "var(--t2)" }}>{c.type}</p>
+                        <p className="text-[10px]" style={{ color: "var(--t3)" }}>{c.hint}</p>
+                      </div>
+                      {active && <Check className="w-3.5 h-3.5 ml-auto flex-shrink-0" style={{ color: "var(--accent-dim)" }} />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
+          {/* Fixed Bills */}
           {step === 3 && (
-            <div className="space-y-2">
-              <p style={{ fontSize: 13, color: "var(--t2)", marginBottom: 4 }}>
-                How do you want to manage your money? Pick a strategy, you can change this anytime.
-              </p>
-              {MANAGEMENT_STRATEGIES.map((s) => {
-                const active = s.id === strategyId;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setStrategyId(s.id)}
-                    className="tap w-full"
-                    style={{
-                      padding: "12px 14px",
-                      borderRadius: "var(--r-field)",
-                      border: `1.5px solid ${active ? "var(--accent)" : "var(--border-2)"}`,
-                      background: active ? "var(--accent-tint)" : "var(--surface-2)",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)", flex: 1 }}>
-                        {s.name}
-                      </p>
-                      {active && <Check size={16} weight="bold" color="var(--accent)" />}
-                    </div>
-                    <p style={{ fontSize: 11, color: "var(--accent-dim)", fontWeight: 700, marginTop: 2 }}>
-                      {s.tagline}
-                    </p>
-                    <p style={{ fontSize: 11, color: "var(--t3)", marginTop: 2, lineHeight: 1.4 }}>
-                      {s.description}
-                    </p>
-                  </button>
-                );
-              })}
+            <div className="space-y-4">
+              <p className="text-sm" style={{ color: "var(--t2)" }}>Which recurring bills do you pay each month?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {SUGGESTED_FIXED_CATEGORIES.map(c => {
+                  const Icon = CAT_ICON[c.type] ?? CAT_ICON_FALLBACK;
+                  const active = fixedCats.includes(c.type);
+                  const color = CAT_COLOR[c.type] ?? "#8A8175";
+                  return (
+                    <button key={c.type} onClick={() => toggleFixed(c.type)}
+                      className="flex items-center gap-2 p-3 text-left transition"
+                      style={{
+                        background: active ? "var(--accent-tint)" : "var(--surface-2)",
+                        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                        borderRadius: "var(--r-field)",
+                      }}>
+                      <Icon size={16} style={{ color: active ? color : "var(--t3)" }} weight="duotone" />
+                      <div>
+                        <p className="text-xs font-medium" style={{ color: active ? "var(--t1)" : "var(--t2)" }}>{c.type}</p>
+                        <p className="text-[10px]" style={{ color: "var(--t3)" }}>{c.hint}</p>
+                      </div>
+                      {active && <Check className="w-3.5 h-3.5 ml-auto flex-shrink-0" style={{ color: "var(--accent-dim)" }} />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
+          {/* Strategy */}
           {step === 4 && (
             <div className="space-y-3">
-              {/* Income summary */}
-              <div className="glass-2" style={{ padding: 14 }}>
-                <p style={{ fontSize: 11, color: "var(--t3)", fontWeight: 700 }}>MONTHLY INCOME</p>
-                <p className="f-display" style={{ fontSize: 22, fontWeight: 700, color: "var(--t1)" }}>
-                  {formatCurrency(incomeNum, currency)}
-                </p>
-              </div>
+              <p className="text-sm" style={{ color: "var(--t2)" }}>How do you want to manage your money?</p>
+              {MANAGEMENT_STRATEGIES.map(s => {
+                const active = s.id === strategyId;
+                return (
+                  <button key={s.id} onClick={() => setStrategyId(s.id)}
+                    className="w-full p-4 text-left transition"
+                    style={{
+                      background: active ? "var(--accent-tint)" : "var(--surface-2)",
+                      border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                      borderRadius: "var(--r-field)",
+                    }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>{s.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--t3)" }}>{s.tagline}</p>
+                      </div>
+                      {active && <Check className="w-4 h-4 flex-shrink-0" style={{ color: "var(--accent-dim)" }} />}
+                    </div>
+                    <p className="text-xs mt-2" style={{ color: "var(--t2)" }}>{s.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-              {/* Money distribution */}
-              <div className="glass-2" style={{ padding: 14, display: "flex", gap: 12 }}>
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <Bank size={20} weight="bold" color="var(--t2)" style={{ marginBottom: 4 }} />
-                  <p style={{ fontSize: 11, color: "var(--t3)", fontWeight: 700 }}>BANK</p>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>
-                    {formatCurrency(bankPart, currency)}
-                  </p>
-                </div>
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <House size={20} weight="bold" color="var(--t2)" style={{ marginBottom: 4 }} />
-                  <p style={{ fontSize: 11, color: "var(--t3)", fontWeight: 700 }}>HOME</p>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>
-                    {formatCurrency(homePart, currency)}
-                  </p>
-                </div>
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <CreditCard size={20} weight="bold" color="var(--t2)" style={{ marginBottom: 4 }} />
-                  <p style={{ fontSize: 11, color: "var(--t3)", fontWeight: 700 }}>WALLET</p>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>
-                    {formatCurrency(walletPart, currency)}
-                  </p>
-                </div>
+          {/* Summary */}
+          {step === 5 && (
+            <div className="space-y-4">
+              <div className="p-4" style={{ background: "var(--accent-tint)", borderRadius: "var(--r-field)", border: "1px solid var(--accent)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--t3)" }}>Monthly Income</p>
+                <p className="text-2xl font-bold" style={{ color: "var(--t1)" }}>{formatCurrency(incomeNum, currency)}</p>
               </div>
-
-              {/* Strategy */}
-              <div className="glass-2" style={{ padding: 14, display: "flex", alignItems: "center", gap: 10 }}>
-                <Sparkle size={18} weight="bold" color="var(--accent)" />
-                <p style={{ fontSize: 13, color: "var(--t2)" }}>
-                  Strategy: <strong style={{ color: "var(--t1)" }}>{strategy.name}</strong>
-                </p>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "BANK", value: bankPart },
+                  { label: "HOME", value: homePart },
+                  { label: "WALLET", value: walletPart },
+                ].map(mp => (
+                  <div key={mp.label} className="p-3 text-center" style={{ background: "var(--surface-2)", borderRadius: "var(--r-field)" }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--t3)" }}>{mp.label}</p>
+                    <p className="text-sm font-bold" style={{ color: "var(--t1)" }}>{formatCurrency(mp.value, currency)}</p>
+                  </div>
+                ))}
               </div>
-
-              {/* Categories summary */}
-              <p style={{ fontSize: 12, color: "var(--t3)", textAlign: "center", marginTop: 8 }}>
-                {variableCats.length} expense categor{variableCats.length === 1 ? "y" : "ies"} and{" "}
-                {fixedCats.length} fixed bill{fixedCats.length === 1 ? "" : "s"} set up, with suggested
-                budgets you can fine-tune anytime.
+              <div className="text-sm p-3" style={{ background: "var(--surface-2)", borderRadius: "var(--r-field)" }}>
+                <span style={{ color: "var(--t2)" }}>Strategy: </span>
+                <span className="font-medium" style={{ color: "var(--t1)" }}>{strategy.name}</span>
+              </div>
+              <p className="text-xs" style={{ color: "var(--t3)" }}>
+                {variableCats.length} expense categor{variableCats.length === 1 ? "y" : "ies"} and {fixedCats.length} fixed bill{fixedCats.length === 1 ? "" : "s"} set up, with suggested budgets you can fine-tune anytime.
               </p>
             </div>
           )}
 
-          {error && <p className="banner banner-error">{error}</p>}
+          {error && <p className="text-xs mt-3 p-2.5 banner banner-error">{error}</p>}
 
           {/* Navigation */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 mt-6">
             {step > 0 && (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="btn-ghost tap"
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "12px 16px",
-                  borderRadius: "var(--r-field)",
-                  border: "1.5px solid var(--border-2)",
-                  background: "var(--surface-2)",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: "var(--t1)",
-                }}
-              >
-                <ArrowLeft size={16} weight="bold" /> Back
+              <button onClick={() => setStep(s => s - 1)}
+                className="flex items-center gap-1 px-4 py-2.5 text-sm font-medium transition hover:opacity-70"
+                style={{ border: "1px solid var(--border-2)", color: "var(--t2)", borderRadius: "var(--r-field)" }}>
+                <ChevronLeft className="w-4 h-4" /> Back
               </button>
             )}
             {step < STEPS.length - 1 ? (
-              <button
-                onClick={() => setStep(step + 1)}
-                disabled={!canNext}
-                className="btn-primary tap"
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "12px 16px",
-                  borderRadius: "var(--r-field)",
-                  background: canNext ? "var(--accent)" : "var(--surface-3)",
-                  color: canNext ? "var(--accent-ink)" : "var(--t3)",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  border: "none",
-                  cursor: canNext ? "pointer" : "not-allowed",
-                }}
-              >
-                Continue <ArrowRight size={16} weight="bold" />
+              <button onClick={handleNext}
+                className="flex-1 flex items-center justify-center gap-1 py-2.5 text-sm font-semibold transition hover:opacity-90"
+                style={{ background: "var(--accent)", color: "var(--accent-ink)", borderRadius: "var(--r-field)", boxShadow: "var(--shadow-btn)" }}>
+                Next <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                onClick={finish}
-                disabled={saving}
-                className="btn-primary tap"
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "12px 16px",
-                  borderRadius: "var(--r-field)",
-                  background: "var(--accent)",
-                  color: "var(--accent-ink)",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  border: "none",
-                }}
-              >
-                {saving ? (
-                  <span
-                    className="w-5 h-5 border-2 rounded-full animate-spin"
-                    style={{ borderColor: "rgba(0,0,0,0.25)", borderTopColor: "var(--accent-ink)" }}
-                  />
-                ) : (
-                  <>
-                    <Check size={16} weight="bold" /> Finish Setup
-                  </>
-                )}
+              <button onClick={handleFinish} disabled={submitting}
+                className="flex-1 flex items-center justify-center gap-1 py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+                style={{ background: "var(--accent)", color: "var(--accent-ink)", borderRadius: "var(--r-field)", boxShadow: "var(--shadow-btn)" }}>
+                {submitting ? (
+                  <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: "var(--accent-ink)", borderTopColor: "transparent" }} />
+                ) : <><Check className="w-4 h-4" /> Let&apos;s Go!</>}
               </button>
             )}
           </div>

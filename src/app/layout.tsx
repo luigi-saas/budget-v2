@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Flousy — Personal Budget Tracker",
-  description:
-    "Track variable expenses, fixed monthly charges, and saving goals with per-category budgets and month-over-month history.",
-  icons: { icon: "/favicon.svg" },
+  description: "Track variable expenses, fixed monthly charges, and saving goals with per-category budgets.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
