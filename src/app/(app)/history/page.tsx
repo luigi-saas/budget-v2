@@ -134,7 +134,7 @@ export default function HistoryPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>{formatCurrency(t.amount, currency)}</p>
-                    {t.date && <p className="text-xs mt-0.5" style={{ color: "var(--t3)" }}>{t.date}</p>}
+                    <p className="text-xs" style={{ color: "var(--t3)" }}>{t.date}</p>
                   </div>
                 </div>
               ))}

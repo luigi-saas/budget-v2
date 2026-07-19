@@ -66,7 +66,7 @@ export default function LandingPage() {
               { icon: PiggyBank, title: "Saving Goals", desc: "Create saving goals with targets and track progress from any money place.", tint: "var(--warn-tint)" },
               { icon: Globe, title: "Multi-Currency", desc: "Support for USD, EUR, GBP, MAD, and more. Choose your local currency.", tint: "var(--accent-tint)" },
               { icon: Smartphone, title: "Mobile-First", desc: "Fully responsive design works beautifully on phones, tablets, and desktops.", tint: "var(--good-tint)" },
-              { icon: Shield, title: "Private & Secure", desc: "Your data stays yours. Supabase Auth with row-level security.", tint: "var(--accent-tint)" },
+              { icon: Shield, title: "Private & Secure", desc: "Your data stays yours. Secured with bcrypt hashing and HTTP-only cookies.", tint: "var(--accent-tint)" },
             ].map(f => (
               <div key={f.title} className="p-6 transition-all group hover:shadow-lg"
                 style={{ background: "var(--surface)", borderRadius: "var(--r-card)", border: "1px solid var(--border)" }}>

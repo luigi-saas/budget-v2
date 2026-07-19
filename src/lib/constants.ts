@@ -1,4 +1,4 @@
-// ── Category types ────────────────────────────────────────────────────────────
+// ── Category types ──────────────────────────────────────────────────────────
 export const VARIABLE_TYPES = [
   "Groceries", "Transport", "Restaurants", "Entertainment",
   "Beauty", "Family", "Shopping", "Health", "Education", "Other",
@@ -11,33 +11,46 @@ export const FIXED_TYPES = [
 export type ExpenseType = string;
 export type FixedType = string;
 
-// ── Money places ──────────────────────────────────────────────────────────────
+// ── Money places ─────────────────────────────────────────────────────────────
 export type MoneyPlace = "bank" | "home" | "wallet";
 export const MONEY_PLACES: MoneyPlace[] = ["bank", "home", "wallet"];
 export const MONEY_PLACE_LABEL: Record<MoneyPlace, string> = {
-  bank: "Bank", home: "Home", wallet: "Wallet",
+  bank: "Bank",
+  home: "Home",
+  wallet: "Wallet",
 };
 
-// ── Category Colors ───────────────────────────────────────────────────────────
+// ── Category Colors ──────────────────────────────────────────────────────────
 export const CAT_COLOR: Record<string, string> = {
-  Groceries: "#D6A75C", Transport: "#7B9E8E", Restaurants: "#C9695A",
-  Entertainment: "#B9925A", Beauty: "#C98A8F", Family: "#8FA37E",
-  Shopping: "#C9695A", Health: "#5FA97A", Education: "#7B9E8E", Other: "#8A8175",
-  Rent: "#D6A75C", Utilities: "#7B9E8E", Internet: "#5FA97A",
-  Phone: "#B9925A", Insurance: "#C98A8F", Subscriptions: "#8A8175",
+  Groceries: "#D6A75C",
+  Transport: "#7B9E8E",
+  Restaurants: "#C9695A",
+  Entertainment: "#B9925A",
+  Beauty: "#C98A8F",
+  Family: "#8FA37E",
+  Shopping: "#C9695A",
+  Health: "#5FA97A",
+  Education: "#7B9E8E",
+  Other: "#8A8175",
+  Rent: "#D6A75C",
+  Utilities: "#7B9E8E",
+  Internet: "#5FA97A",
+  Phone: "#B9925A",
+  Insurance: "#C98A8F",
+  Subscriptions: "#8A8175",
 };
 
-// ── Currencies ────────────────────────────────────────────────────────────────
+// ── Currencies ───────────────────────────────────────────────────────────────
 export const CURRENCIES = [
-  { code: "USD", symbol: "$",   name: "US Dollar" },
-  { code: "EUR", symbol: "€",   name: "Euro" },
-  { code: "GBP", symbol: "£",   name: "British Pound" },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
   { code: "MAD", symbol: "MAD", name: "Moroccan Dirham" },
-  { code: "CAD", symbol: "C$",  name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$",  name: "Australian Dollar" },
-  { code: "JPY", symbol: "¥",   name: "Japanese Yen" },
-  { code: "INR", symbol: "₹",   name: "Indian Rupee" },
-  { code: "BRL", symbol: "R$",  name: "Brazilian Real" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
 ];
 
@@ -47,10 +60,15 @@ export function formatCurrency(amount: number, currency: string = "USD"): string
   return `${sym}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// ── Onboarding Strategies ─────────────────────────────────────────────────────
+// ── Onboarding Strategies ────────────────────────────────────────────────────
 export interface ManagementStrategy {
-  id: string; name: string; tagline: string; description: string;
-  homeShare: number; bankShare: number; recommended?: boolean;
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  homeShare: number;
+  bankShare: number;
+  recommended?: boolean;
 }
 
 export const MANAGEMENT_STRATEGIES: ManagementStrategy[] = [
@@ -60,7 +78,12 @@ export const MANAGEMENT_STRATEGIES: ManagementStrategy[] = [
   { id: "pay-yourself-first", name: "Pay Yourself First", tagline: "Best for saving goals", description: "Set money aside the moment you're paid.", homeShare: 0.25, bankShare: 0.3 },
 ];
 
-export interface CategorySuggestion { type: string; hint: string; sharePct: number; recommended: boolean; }
+export interface CategorySuggestion {
+  type: string;
+  hint: string;
+  sharePct: number;
+  recommended: boolean;
+}
 
 export const SUGGESTED_VARIABLE_CATEGORIES: CategorySuggestion[] = [
   { type: "Groceries", hint: "Groceries & everyday food", sharePct: 12, recommended: true },

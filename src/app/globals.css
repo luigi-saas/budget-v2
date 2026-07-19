@@ -1,182 +1,94 @@
 @import "tailwindcss";
 
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
-  /* Base */
-  --color-bg: #FFFFFF;
-  --color-surface: #F8F8F8;
-  --color-card: #FFFFFF;
-  /* Brand */
-  --color-primary: #EEC1A0;
-  --color-primary-light: #F4D7C2;
-  --color-primary-dark: #D9A983;
-  /* Text */
-  --color-text: #000000;
-  --color-text-secondary: #4D4D4D;
-  --color-text-muted: #A9A9A9;
-  --color-text-inverse: #FFFFFF;
-  /* Borders */
-  --color-border: #E5E5E5;
-  --color-divider: #F0F0F0;
-  /* Icons */
-  --color-icon: #000000;
-  --color-icon-muted: #A9A9A9;
-  /* States */
-  --color-success: #4CAF50;
-  --color-warning: #F4B400;
-  --color-error: #E53935;
-  --color-info: #2196F3;
-  /* Shadows */
-  --shadow-color: rgba(0, 0, 0, 0.08);
+  --bg: #F7F5F2;
+  --surface: #FFFFFF;
+  --surface-2: #F2EFE9;
+  --border: #E8E3DB;
+  --border-2: #D8D0C5;
 
-  /* ── app-level semantic aliases ── */
-  --bg:        var(--color-bg);
-  --surface:   var(--color-card);
-  --surface-2: var(--color-surface);
-  --surface-3: #F1ECE6;
-  --border:    var(--color-divider);
-  --border-2:  var(--color-border);
+  --t1: #1A1714;
+  --t2: #4A4540;
+  --t3: #8A8175;
 
-  /* single accent — soft peach-tan */
-  --accent:      var(--color-primary);
-  --accent-dim:  var(--color-primary-dark);
-  --accent-tint: rgba(238,193,160,0.20);
-  --accent-ink:  var(--color-text);
+  --accent: #C9A96E;
+  --accent-dim: #A07840;
+  --accent-tint: #FDF6EC;
+  --accent-ink: #FFFFFF;
 
-  /* semantic */
-  --good:      var(--color-success);
-  --good-tint: rgba(76,175,80,0.12);
-  --bad:       var(--color-error);
-  --bad-tint:  rgba(229,57,53,0.10);
-  --warn:      var(--color-warning);
-  --warn-tint: rgba(244,180,0,0.14);
+  --good: #4A9E6F;
+  --good-tint: #EEF7F2;
+  --bad: #C9695A;
+  --bad-tint: #FDF0EE;
+  --warn: #C9A96E;
+  --warn-tint: #FDF6EC;
 
-  /* text */
-  --t1: var(--color-text);
-  --t2: var(--color-text-secondary);
-  --t3: var(--color-text-muted);
-
-  --shadow-card: 0 4px 20px var(--shadow-color);
-  --shadow-btn:  0 4px 14px rgba(217,169,131,0.45);
-
-  /* shape system */
-  --r-card: 20px;
-  --r-field: 14px;
+  --r-card: 16px;
+  --r-field: 10px;
   --r-pill: 999px;
+
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-btn: 0 2px 8px rgba(201,169,110,0.3);
 }
 
-@theme {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
-  --color-border: var(--border);
-  --color-border-2: var(--border-2);
-  --color-accent: var(--accent);
-  --color-accent-dim: var(--accent-dim);
-  --color-accent-tint: var(--accent-tint);
-  --color-accent-ink: var(--accent-ink);
-  --color-good: var(--good);
-  --color-good-tint: var(--good-tint);
-  --color-bad: var(--bad);
-  --color-bad-tint: var(--bad-tint);
-  --color-warn: var(--warn);
-  --color-warn-tint: var(--warn-tint);
-  --color-t1: var(--t1);
-  --color-t2: var(--t2);
-  --color-t3: var(--t3);
-  --color-inv: var(--color-text-inverse);
-  --shadow-card: var(--shadow-card);
-  --shadow-btn: var(--shadow-btn);
-  --radius-card: var(--r-card);
-  --radius-field: var(--r-field);
-  --radius-pill: var(--r-pill);
+.dark {
+  --bg: #141210;
+  --surface: #1C1A17;
+  --surface-2: #242018;
+  --border: #2E2A24;
+  --border-2: #3A342C;
+
+  --t1: #F2EDE6;
+  --t2: #C8C0B2;
+  --t3: #7A7268;
+
+  --accent: #C9A96E;
+  --accent-dim: #D4B87E;
+  --accent-tint: #2A2218;
+  --accent-ink: #1A1714;
+
+  --good: #5AB580;
+  --good-tint: #1A2E22;
+  --bad: #D4796A;
+  --bad-tint: #2E1C1A;
+  --warn: #C9A96E;
+  --warn-tint: #2A2218;
+
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-btn: 0 2px 8px rgba(201,169,110,0.2);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
 
 body {
-  font-feature-settings: "rlig" 1, "calt" 1;
   background: var(--bg);
   color: var(--t1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Animations ── */
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; }
+
+/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.animate-fadeIn { animation: fadeIn 0.4s ease-out both; }
+.animate-fadeIn { animation: fadeIn 0.25s ease forwards; }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.animate-slideUp { animation: slideUp 0.5s ease-out both; }
-.slide-up { animation: slideUp 0.5s ease-out both; }
+.animate-slideUp { animation: slideUp 0.3s ease forwards; }
 
-/* ── Form Elements ── */
-.field {
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 14px;
-  border-radius: var(--r-field);
-  background: var(--surface-2);
-  border: 1.5px solid var(--border-2);
-  color: var(--t1);
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.field:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-tint);
-}
-.field::placeholder {
-  color: var(--t3);
-}
+/* Focus rings */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ── Glass Card ── */
-.glass {
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(12px);
-  border-radius: var(--r-card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
-}
-.glass-2 {
-  background: var(--surface-2);
-  border-radius: var(--r-field);
-}
-
-/* ── Banners ── */
-.banner {
-  padding: 10px 14px;
-  font-size: 13px;
-  border-radius: var(--r-field);
-  font-weight: 500;
-}
-.banner-error {
-  background: var(--bad-tint);
-  color: var(--bad);
-}
-.banner-success {
-  background: var(--good-tint);
-  color: var(--good);
-}
-
-/* ── Tap feedback ── */
-.tap {
-  cursor: pointer;
-  transition: transform 0.1s, opacity 0.1s;
-}
-.tap:active {
-  transform: scale(0.98);
-  opacity: 0.9;
-}
-
-/* ── Display Font ── */
-.f-display {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
+/* Table */
+table { border-collapse: collapse; width: 100%; }

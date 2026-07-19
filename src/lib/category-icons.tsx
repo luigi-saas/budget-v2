@@ -1,28 +1,48 @@
 'use client';
-
 import {
-  ShoppingCart, GasPump, ForkKnife, Confetti, Sparkle, UsersThree, Crown, UserCircle,
-  Bag, Package, Lightning, House, WifiHigh, Phone, Robot, Car, Airplane, Bus, Train,
-  Bicycle, Book, Books, GraduationCap, Briefcase, Wrench, Coffee, Pizza, Wine, Cookie,
-  Heart, Heartbeat, FirstAidKit, Pill, Gift, Star, MusicNotes, GameController, FilmSlate,
-  Baby, PawPrint, Flower, Tree, Camera, Palette, PaintBrush, Barbell, Umbrella, SunHorizon,
-  Bank as BankIcon, CreditCard, Coins, PiggyBank, Hammer, Toolbox, Basket, TShirt,
+  ShoppingCart, GasPump, ForkKnife, Confetti, Sparkle, UsersThree,
+  Crown, UserCircle, Bag, Package, Lightning, House, WifiHigh, Phone,
+  Robot, Car, Airplane, Bus, Train, Bicycle, Book, Books, GraduationCap,
+  Briefcase, Wrench, Coffee, Pizza, Wine, Cookie, Heart, Heartbeat,
+  FirstAidKit, Pill, Gift, Star, MusicNotes, GameController, FilmSlate,
+  Baby, PawPrint, Flower, Tree, Camera, Palette, PaintBrush, Barbell,
+  Umbrella, SunHorizon, Bank as BankIcon, CreditCard, Coins, PiggyBank,
+  Hammer, Toolbox, Basket, TShirt,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
 export const CAT_ICON: Record<string, Icon> = {
   // Variable categories
-  Groceries: ShoppingCart, Transport: Car, Restaurants: ForkKnife,
-  Entertainment: Confetti, Beauty: Sparkle, Family: UsersThree,
-  Shopping: Bag, Health: Heartbeat, Education: GraduationCap, Other: Package,
+  Groceries: ShoppingCart,
+  Transport: Car,
+  Restaurants: ForkKnife,
+  Entertainment: Confetti,
+  Beauty: Sparkle,
+  Family: UsersThree,
+  Shopping: Bag,
+  Health: Heartbeat,
+  Education: GraduationCap,
+  Other: Package,
   // French variants
-  Alimentation: ShoppingCart, Gazoil: GasPump, Restaurant: ForkKnife,
-  Sortie: Confetti, Beauté: Sparkle, Famille: UsersThree,
-  Queen: Crown, King: UserCircle, Autre: Package,
+  Alimentation: ShoppingCart,
+  Gazoil: GasPump,
+  Restaurant: ForkKnife,
+  Sortie: Confetti,
+  Beauté: Sparkle,
+  Famille: UsersThree,
+  Queen: Crown,
+  King: UserCircle,
+  Autre: Package,
   // Fixed categories
-  Rent: House, Utilities: Lightning, Internet: WifiHigh,
-  Subscriptions: Robot, Insurance: Briefcase,
-  Facture: Lightning, Location: House, Téléphone: Phone, AI: Robot,
+  Rent: House,
+  Utilities: Lightning,
+  Internet: WifiHigh,
+  Subscriptions: Robot,
+  Insurance: Briefcase,
+  Facture: Lightning,
+  Location: House,
+  Téléphone: Phone,
+  AI: Robot,
 };
 
 export const CAT_ICON_FALLBACK: Icon = Package;

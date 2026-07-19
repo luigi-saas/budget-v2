@@ -1,50 +1,48 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 px-6 py-4" style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)" }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 flex items-center justify-center font-bold text-sm"
-              style={{ background: "var(--accent)", borderRadius: "10px", color: "var(--accent-ink)" }}>F</div>
-            <span className="font-bold text-lg" style={{ color: "var(--t1)" }}>Flousy</span>
+      <header className="sticky top-0 z-20 px-6 h-16 flex items-center justify-between"
+        style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+        <Link href="/" className="flex items-center gap-2 font-bold text-base" style={{ color: "var(--t1)" }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm"
+            style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>F</div>
+          Flousy
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/login"
+            className="text-sm font-medium transition hover:opacity-80"
+            style={{ color: "var(--t2)" }}>
+            Sign In
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium transition hover:opacity-70" style={{ color: "var(--t2)" }}>
-              Sign In
-            </Link>
-            <Link href="/login" className="px-4 py-2 text-sm font-semibold transition hover:opacity-90"
-              style={{ background: "var(--accent)", color: "var(--accent-ink)", borderRadius: "var(--r-field)", boxShadow: "var(--shadow-btn)" }}>
-              Get Started
-            </Link>
-          </div>
+          <Link href="/login?tab=register"
+            className="px-5 py-2 text-sm font-semibold rounded-xl transition hover:opacity-90"
+            style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+            Get Started
+          </Link>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1">
-        {children}
-      </main>
+      {/* Main */}
+      <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="py-8 px-6" style={{ borderTop: "1px solid var(--border)" }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 flex items-center justify-center font-bold text-xs"
-              style={{ background: "var(--accent)", borderRadius: "6px", color: "var(--accent-ink)" }}>F</div>
-            <span className="font-semibold text-sm" style={{ color: "var(--t2)" }}>Flousy</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm" style={{ color: "var(--t3)" }}>
-            <Link href="/privacy" className="hover:opacity-70 transition">Privacy</Link>
-            <Link href="/terms" className="hover:opacity-70 transition">Terms</Link>
-          </div>
-          <p className="text-xs" style={{ color: "var(--t3)" }}>
-            © {new Date().getFullYear()} Flousy. All rights reserved.
-          </p>
+      <footer className="px-6 py-8 text-center" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs"
+            style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>F</div>
+          <span className="font-bold text-sm" style={{ color: "var(--t1)" }}>Flousy</span>
         </div>
+        <div className="flex items-center justify-center gap-4 mb-3 text-sm" style={{ color: "var(--t3)" }}>
+          <Link href="#" className="hover:opacity-80">Privacy</Link>
+          <Link href="#" className="hover:opacity-80">Terms</Link>
+        </div>
+        <p className="text-xs" style={{ color: "var(--t3)" }}>
+          © {new Date().getFullYear()} Flousy. All rights reserved.
+        </p>
       </footer>
     </div>
   );
